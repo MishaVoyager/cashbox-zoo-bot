@@ -258,6 +258,7 @@ async def paste_from_csv(message: Message, state: FSMContext):
     if not message.document.file_name.endswith(".csv"):
         await message.answer(chat.wrong_file_format_msg)
         return
+    await message.answer(chat.file_is_processing_msg)
     original_file = await message.bot.get_file(message.document.file_id)
     in_memory_file = await message.bot.download(file=original_file)
     row_errors, resources = await check_csv(in_memory_file)

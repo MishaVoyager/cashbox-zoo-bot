@@ -34,11 +34,12 @@ async def init_base():
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     await BDInit.init()
-    await BDInit.prepare_test_data()
 
 
-async def main(on_server: bool = True):
+async def main(on_server: bool = True, with_test_data: bool = False):
     await init_base()
+    if with_test_data:
+        await BDInit.prepare_test_data()
     bot = Bot(token=TOKEN)
     await bot.set_my_commands(COMMANDS)
     dp = Dispatcher(storage=MemoryStorage())
@@ -58,7 +59,6 @@ async def main(on_server: bool = True):
 
     await bot.delete_webhook(drop_pending_updates=True)
     await bot.set_webhook(WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
-
     app = web.Application()
     webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET)
     webhook_requests_handler.register(app, path=WEBHOOK_ROUTE)
@@ -80,4 +80,4 @@ if __name__ == "__main__":
             utc=True
         )]
     )
-    asyncio.run(main(on_server=True))
+    asyncio.run(main(on_server=True, with_test_data=False))

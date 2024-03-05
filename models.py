@@ -437,7 +437,7 @@ class BDInit:
                     [
                         User(chat_id="230809906", email="mnoskov@skbkontur.ru", is_admin=True),
                         User(chat_id="38170680", email="a.karamova@skbkontur.ru"),
-                        # Record(resource="2", user_email="a.karamova@skbkontur.ru", action=ActionType.QUEUE),
+                        Record(resource="2", user_email="a.karamova@skbkontur.ru", action=ActionType.QUEUE),
                     ]
                 )
                 await session.commit()
