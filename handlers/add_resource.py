@@ -234,7 +234,7 @@ async def check_csv(in_memory_file: BinaryIO) -> tuple[dict[int, list[checker.Re
     errors: dict[int, list[checker.ResourceError]] = {}
     resources = []
     try:
-        wrapper = io.TextIOWrapper(in_memory_file, encoding='utf-8')
+        wrapper = io.TextIOWrapper(in_memory_file)
         for index, line in enumerate(wrapper.readlines(), 1):
             line = line.replace("\r\n", "").replace("\n", "")
             row = [x.strip() for x in line.split(",")]
