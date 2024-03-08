@@ -107,7 +107,7 @@ async def is_user_in_queue(user: User, resource: Resource, records: list[Record]
     return user_in_queue
 
 
-async def get_available_action(resource: Resource, chat_id) -> ActionType:
+async def get_available_action(resource: Resource, chat_id: int) -> ActionType:
     user = await User.get_current(chat_id)
     records: list[Record] = await Record.get({"user_email": user.email})
     if not resource.user_email:
@@ -120,16 +120,16 @@ async def get_available_action(resource: Resource, chat_id) -> ActionType:
         return ActionType.QUEUE
 
 
-async def format_note(resource: Resource, chat_id) -> str:
+async def format_note(resource: Resource, chat_id: int) -> str:
     command = (await get_available_action(resource, chat_id)).value
-    user = await User.get_current(str(chat_id))
+    user = await User.get_current(chat_id)
     if user.is_admin:
         return f"{str(resource)}\r\n{command}{resource.id}\r\n{ActionType.EDIT.value}{resource.id}\r\n\r\n"
     else:
         return f"{str(resource)}\r\n{command}{resource.id}\r\n\r\n"
 
 
-async def format_notes(resources: list[Resource], chat_id) -> str:
+async def format_notes(resources: list[Resource], chat_id: int) -> str:
     return "".join([await format_note(resource, chat_id) for resource in resources])
 
 

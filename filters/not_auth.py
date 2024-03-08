@@ -8,4 +8,4 @@ from models import User
 
 class NotAuthFilter(BaseFilter):
     async def __call__(self, message: Message) -> Union[bool, Dict[str, Any]]:
-        return not await User.is_exist(str(message.chat.id))
+        return not await User.is_exist(message.chat.id)

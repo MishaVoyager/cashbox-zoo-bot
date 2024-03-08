@@ -56,7 +56,7 @@ async def return_resource(message: Message, resource_id: int) -> str:
             f"устройство с resource_id {resource_id}, но оно не нашлось")
         return chat.unexpected_resource_not_found_error_msg
     resource: Resource = resources[0]
-    user = await User.get_current(str(message.chat.id))
+    user = await User.get_current(message.chat.id)
     if resource.user_email != user.email:
         logging.error(f"Пользователь {repr(user)} пытался вернуть устройство, "
                       f"записанное на другого пользователя: {repr(resource)}")
@@ -71,7 +71,7 @@ async def return_resource(message: Message, resource_id: int) -> str:
 
 async def queue_resource(message: Message, resource_id: int) -> str:
     resource = (await Resource.get_by_primary(resource_id))[0]
-    user = await User.get_current(str(message.chat.id))
+    user = await User.get_current(message.chat.id)
     records = await db.get_resource_queue(resource_id)
     if user.email in [record.user_email for record in records]:
         return chat.queue_second_time_error_msg
@@ -82,7 +82,7 @@ async def queue_resource(message: Message, resource_id: int) -> str:
 
 async def leave_resource(message: Message, resource_id: int) -> str:
     resource = (await Resource.get_by_primary(resource_id))[0]
-    user = await User.get_current(str(message.chat.id))
+    user = await User.get_current(message.chat.id)
     records = await db.get_resource_queue(resource_id)
     if user.email not in [record.user_email for record in records]:
         logging.info(f"Пользователь {repr(user)} пытался дважды покинуть очередь на устройство {repr(resource)}")

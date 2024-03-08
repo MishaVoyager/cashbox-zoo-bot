@@ -16,7 +16,6 @@ CATEGORIES = ["ККТ", "Весы", "Принтер кухонный", "План
 
 engine = create_async_engine("sqlite+aiosqlite:///db2.db")
 
-
 class Base(AsyncAttrs, DeclarativeBase):
 
     @classmethod
@@ -153,9 +152,9 @@ class User(Base):
     __tablename__ = "user"
 
     email: Mapped[str] = mapped_column(primary_key=True)
-    chat_id: Mapped[str] = mapped_column()
+    chat_id: Mapped[int] = mapped_column()
     is_admin: Mapped[bool] = mapped_column(default=False)
-    user_id: Mapped[Optional[str]] = mapped_column()
+    user_id: Mapped[Optional[int]] = mapped_column()
     full_name: Mapped[Optional[str]] = mapped_column()
     username: Mapped[Optional[str]] = mapped_column()
     comment: Mapped[Optional[str]] = mapped_column()
@@ -204,7 +203,7 @@ class User(Base):
                     return user
 
     @classmethod
-    async def get_current(cls, chat_id: str) -> "User | None":
+    async def get_current(cls, chat_id: int) -> "User | None":
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             async with session.begin():
@@ -217,7 +216,7 @@ class User(Base):
         return None
 
     @classmethod
-    async def is_exist(cls, chat_id: str) -> bool:
+    async def is_exist(cls, chat_id: int) -> bool:
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             async with session.begin():
@@ -435,8 +434,8 @@ class BDInit:
                     return
                 session.add_all(
                     [
-                        User(chat_id="230809906", email="mnoskov@skbkontur.ru", is_admin=True),
-                        User(chat_id="38170680", email="a.karamova@skbkontur.ru"),
+                        User(chat_id=230809906, email="mnoskov@skbkontur.ru", is_admin=True),
+                        User(chat_id=38170680, email="a.karamova@skbkontur.ru"),
                         Record(resource="2", user_email="a.karamova@skbkontur.ru", action=ActionType.QUEUE),
                     ]
                 )

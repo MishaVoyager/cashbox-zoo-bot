@@ -21,16 +21,16 @@ router = Router()
 @router.message(F.text.regexp(r"\/update_address.+"))
 async def update_address_handler(message: Message, state: FSMContext):
     resource_id = int(message.text.removeprefix("/update_address"))
-    await take_resource(message, state, str(resource_id))
+    await take_resource(message, state, resource_id)
 
 
 @router.message(F.text.regexp(r"\/take.+"))
 async def take_resource_handler(message: Message, state: FSMContext):
     resource_id = int(message.text.removeprefix("/take"))
-    await take_resource(message, state, str(resource_id))
+    await take_resource(message, state, resource_id)
 
 
-async def take_resource(message: Message, state: FSMContext, resource_id: str):
+async def take_resource(message: Message, state: FSMContext, resource_id: int):
     resource: Resource = await Resource.get_single(resource_id)
     if not resource:
         await message.answer(chat.take_nonnexisted_error_msg)
@@ -77,7 +77,7 @@ async def enter_return_date(message: Message, state: FSMContext):
 @router.message(TakeFSM.confirming)
 async def confirm_take(message: Message, state: FSMContext):
     if message.text.lower() == "подтвердить":
-        user = await User.get_current(str(message.chat.id))
+        user = await User.get_current(message.chat.id)
         data = await state.get_data()
         resource_id = data["resource_id"]
         resource: Resource = await Resource.take(resource_id, user.email, data["address"], data["return_date"])

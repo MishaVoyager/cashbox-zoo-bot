@@ -39,7 +39,7 @@ router = Router()
 
 @router.message(Command("add"))
 async def add_resource_command(message: Message, state: FSMContext):
-    user = await User.get_current(str(message.chat.id))
+    user = await User.get_current(message.chat.id)
     if not user.is_admin:
         await message.answer(chat.not_found_msg)
         return

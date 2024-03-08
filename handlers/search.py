@@ -27,7 +27,7 @@ async def help_handler(message: Message):
 
 
 async def welcome(message: Message):
-    user: User = await User.get_current(str(message.chat.id))
+    user: User = await User.get_current(message.chat.id)
     if not user.is_admin:
         await message.answer(chat.welcome_msg)
     else:
@@ -68,14 +68,14 @@ async def wishlist_handler(message: Message):
 
 
 async def get_wishlist(message: Message, page: int, call: CallbackQuery | None = None):
-    user = await User.get_current(str(message.chat.id))
+    user = await User.get_current(message.chat.id)
     resources = await db.get_waited_resources_for_user(user)
     if len(resources) == 0:
         await message.answer(chat.empty_wishlist)
         return
     paginator = tg.Paginator(page, resources)
     keyboard = paginator.create_keyboard("wishlist")
-    notes = await db.format_notes(paginator.get_objects_on_page(), str(message.chat.id))
+    notes = await db.format_notes(paginator.get_objects_on_page(), message.chat.id)
     text = paginator.result_message() + notes
     if not call:
         await message.answer(text=text, reply_markup=keyboard)
@@ -96,14 +96,14 @@ async def get_mine_resources_handler(message: Message):
 
 
 async def get_mine_resources(message: Message, page: int, call: CallbackQuery | None = None):
-    user = await User.get_current(str(message.chat.id))
+    user = await User.get_current(message.chat.id)
     resources = await Resource.get_resources_taken_by_user(user)
     if len(resources) == 0:
         await message.answer(chat.user_have_no_device_msg)
         return
     paginator = tg.Paginator(page, resources)
     keyboard = paginator.create_keyboard("mine")
-    notes = await db.format_notes(paginator.get_objects_on_page(), str(message.chat.id))
+    notes = await db.format_notes(paginator.get_objects_on_page(), message.chat.id)
     text = paginator.result_message() + notes
     if not call:
         await message.answer(text=text, reply_markup=keyboard)

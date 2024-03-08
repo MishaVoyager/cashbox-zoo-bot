@@ -20,7 +20,7 @@ class ResourceError(str, Enum):
 
 
 async def is_admin(chat_id) -> bool:
-    user = await models.User.get_current(str(chat_id))
+    user = await models.User.get_current(chat_id)
     return user.is_admin
 
 

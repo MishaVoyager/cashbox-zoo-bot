@@ -38,7 +38,7 @@ def get_log_files() -> list[str]:
 
 @router.message(Command("info"))
 async def info_handler(message: Message, state: FSMContext) -> None:
-    user = await User.get_current(str(message.chat.id))
+    user = await User.get_current(message.chat.id)
     if not user.is_admin:
         await message.answer(chat.not_found_msg)
         return
