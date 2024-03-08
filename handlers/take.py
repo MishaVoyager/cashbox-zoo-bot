@@ -21,7 +21,14 @@ router = Router()
 @router.message(F.text.regexp(r"\/update_address.+"))
 async def update_address_handler(message: Message, state: FSMContext):
     resource_id = int(message.text.removeprefix("/update_address"))
-    await take_resource(message, state, resource_id)
+    resource: Resource = await Resource.get_single(resource_id)
+    visitor = await Visitor.get_current(message.chat.id)
+    if resource.user_email != visitor.email:
+        await message.answer(chat.update_address_others_resource_msg)
+        return
+    await message.answer("Напишите, где будет находится устройство? Например: Офис Екб, мой стол. Или: Питер, дома")
+    await state.update_data(resource_id=resource_id)
+    await state.set_state(TakeFSM.choosing_address)
 
 
 @router.message(F.text.regexp(r"\/take.+"))

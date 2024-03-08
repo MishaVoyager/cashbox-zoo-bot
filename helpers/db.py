@@ -27,6 +27,10 @@ async def notify_user_about_returning(message: Message, email: str, resource: Re
         logging.error(f"Не нашли пользователя {email}, чтобы уведомить о списании с него "
                       f"устройства {repr(resource)}")
         return None
+    if users[0].chat_id is None:
+        logging.info(f"Не уведомили {email} о списании устройства {repr(resource)}: "
+                     f"он еще не отправлял сообщений боту")
+        return None
     chat_id = users[0].chat_id
     await message.bot.send_message(chat_id,
                                    f"С вас списали устройство {resource.name} с артикулом {resource.vendor_code}\r\n"
@@ -40,11 +44,13 @@ async def notify_user_about_taking(message: Message, email: str, resource: Resou
         logging.info(f"Из-за ошибки авторизации не удалось уведомить пользователя с почтой {email} "
                      f"о записи на него устройства {repr(resource)}")
         return None
+    if users[0].chat_id is None:
+        logging.info(f"Не уведомили {email} о записи устройства {repr(resource)}: пользователь еще не отправлял сообщений боту")
+        return None
     chat_id = users[0].chat_id
     await message.bot.send_message(chat_id,
                                    f"На вас записали устройство {resource.name} c артикулом {resource.vendor_code}\r\n"
-                                   f"/return{resource.id} - если уже неактуально.\r\n"
-                                   f"А если это ошибка, напишите @misha_voyager"
+                                   f"/return{resource.id} - если уже неактуально"
                                    )
 
 
@@ -53,6 +59,10 @@ async def notify_next_user_about_taking(message: Message, next_user_email: str, 
     if len(users) == 0:
         logging.error(f"Не нашли пользователя {next_user_email}, чтобы уведомить "
                       f"о записи на него ресурса: {repr(resource)}")
+        return None
+    if users[0].chat_id is None:
+        logging.error(f"Не уведомили {next_user_email}, что пришла его очередь занять "
+                      f"{repr(resource)}: отсутствует chat_id")
         return None
     next_user_chat_id = users[0].chat_id
     await message.bot.send_message(

@@ -274,6 +274,8 @@ async def paste_from_csv(message: Message, state: FSMContext):
         await message.answer(f"{error_reply}{row_errors_text}{doubles_text}")
         return
     for resource in resources:
+        if resource.user_email is not None:
+            await Visitor.add_if_needed(resource.user_email)
         await Resource.add_existed(resource)
         user_name = chat.get_username_str(message)
         logging.info(

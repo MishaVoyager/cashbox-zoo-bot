@@ -8,7 +8,7 @@ from typing import Optional, Self
 from aiogram.types import Message
 from sqlalchemy import ForeignKey, select, or_
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.sql.operators import ilike_op
 
@@ -153,16 +153,17 @@ class Visitor(Base):
     __tablename__ = "visitor"
 
     email: Mapped[str] = mapped_column(primary_key=True)
-    chat_id: Mapped[int] = mapped_column()
     is_admin: Mapped[bool] = mapped_column(default=False)
+    chat_id: Mapped[Optional[int]] = mapped_column()
     user_id: Mapped[Optional[int]] = mapped_column()
     full_name: Mapped[Optional[str]] = mapped_column()
     username: Mapped[Optional[str]] = mapped_column()
     comment: Mapped[Optional[str]] = mapped_column()
 
+
     def __repr__(self):
         return f"Visitor(name={self.email}, " \
-               f"chat_id={self.chat_id}, " \
+               f"chat_id={self.chat_id or 'None'}, " \
                f"is_admin={self.is_admin}, " \
                f"user_id={self.user_id or 'None'}, " \
                f"full_name={self.full_name or 'None'}, " \
@@ -171,7 +172,7 @@ class Visitor(Base):
 
     def __str__(self):
         return f"Пользователь с почтой {self.email} " \
-               f"с chat_id {self.chat_id} и " \
+               f"с chat_id {self.chat_id or 'None'} и " \
                f"{'c админскими правами' if self.is_admin else 'без админских прав'}"
 
     @classmethod
@@ -225,6 +226,20 @@ class Visitor(Base):
                 result = await session.scalars(stmt)
                 users = result.all()
         return len(users) == 1
+
+    @classmethod
+    async def add_if_needed(cls, email: str) -> bool:
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            async with session.begin():
+                stmt = select(cls).where(cls.email == email)
+                result = await session.scalars(stmt)
+                users = result.all()
+                if len(users) > 0:
+                    return False
+                session.add(Visitor(email=email))
+                await session.commit()
+                return True
 
 
 class Category(Base):
@@ -298,6 +313,8 @@ class Resource(Base):
             if field not in Resource.get_fields_names():
                 logging.error(f"В метод Resource.update некорректно передано поле field: {field}")
                 return None
+        if "user_email" in fields.keys():
+            await Visitor.add_if_needed(email=fields["user_email"])
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         resources = await Resource.get_by_primary(id)
         resource = resources[0]
@@ -319,6 +336,8 @@ class Resource(Base):
             logging.error(f"При добавлении ресурса в метод не переданы name, category_name "
                           f"или vendor_code. Значение fields: {fields}")
             return None
+        if "user_email" in fields.keys():
+            await Visitor.add_if_needed(email=fields["user_email"])
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             async with session.begin():
@@ -335,6 +354,7 @@ class Resource(Base):
                           f"пользователь {user_email} будет расстроен")
             return None
         resource = resources[0]
+        await Visitor.add_if_needed(email=user_email)
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             async with session.begin():
