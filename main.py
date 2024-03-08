@@ -80,4 +80,4 @@ if __name__ == "__main__":
             utc=True
         )]
     )
-    asyncio.run(main(on_server=True, with_test_data=False))
+    asyncio.run(main(on_server=False, with_test_data=False))

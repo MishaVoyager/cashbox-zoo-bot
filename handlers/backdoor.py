@@ -8,7 +8,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, FSInputFile, ReplyKeyboardRemove
 
 from helpers import chat, tg
-from models import User
+from models import Visitor
 
 LOGS_FOLDER = os.path.join(os.curdir, "logs")
 CURRENT_LOG_NAME = "cashbox_zoo.log"
@@ -38,7 +38,7 @@ def get_log_files() -> list[str]:
 
 @router.message(Command("info"))
 async def info_handler(message: Message, state: FSMContext) -> None:
-    user = await User.get_current(message.chat.id)
+    user = await Visitor.get_current(message.chat.id)
     if not user.is_admin:
         await message.answer(chat.not_found_msg)
         return

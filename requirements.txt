@@ -5,5 +5,5 @@ SQLAlchemy>=2.0
 alembic>=1.13
 aiosqlite>=0.19
 pytest>=7.4
-
 aiohttp~=3.9.3
+asyncpg

@@ -4,10 +4,10 @@ from aiogram.types import Message
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from models import Resource, User, Record, ActionType, engine
+from models import Resource, Visitor, Record, ActionType, engine
 
 
-async def get_waited_resources_for_user(user: User):
+async def get_waited_resources_for_user(user: Visitor):
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         async with session.begin():
@@ -22,7 +22,7 @@ async def get_waited_resources_for_user(user: User):
 
 
 async def notify_user_about_returning(message: Message, email: str, resource: Resource) -> None:
-    users: list[User] = (await User.get_by_primary(email))
+    users: list[Visitor] = (await Visitor.get_by_primary(email))
     if len(users) == 0:
         logging.error(f"Не нашли пользователя {email}, чтобы уведомить о списании с него "
                       f"устройства {repr(resource)}")
@@ -35,7 +35,7 @@ async def notify_user_about_returning(message: Message, email: str, resource: Re
 
 
 async def notify_user_about_taking(message: Message, email: str, resource: Resource) -> None:
-    users: list[User] = (await User.get_by_primary(email))
+    users: list[Visitor] = (await Visitor.get_by_primary(email))
     if len(users) == 0:
         logging.info(f"Из-за ошибки авторизации не удалось уведомить пользователя с почтой {email} "
                      f"о записи на него устройства {repr(resource)}")
@@ -49,7 +49,7 @@ async def notify_user_about_taking(message: Message, email: str, resource: Resou
 
 
 async def notify_next_user_about_taking(message: Message, next_user_email: str, resource: Resource) -> None:
-    users: list[User] = (await User.get_by_primary(next_user_email))
+    users: list[Visitor] = (await Visitor.get_by_primary(next_user_email))
     if len(users) == 0:
         logging.error(f"Не нашли пользователя {next_user_email}, чтобы уведомить "
                       f"о записи на него ресурса: {repr(resource)}")
@@ -97,7 +97,7 @@ async def get_resource_queue(resource_id) -> list[Record]:
     return list(queue)
 
 
-async def is_user_in_queue(user: User, resource: Resource, records: list[Record] = None) -> bool:
+async def is_user_in_queue(user: Visitor, resource: Resource, records: list[Record] = None) -> bool:
     if not records:
         records = await Record.get({"user_email": user.email})
     user_in_queue = False
@@ -108,7 +108,7 @@ async def is_user_in_queue(user: User, resource: Resource, records: list[Record]
 
 
 async def get_available_action(resource: Resource, chat_id: int) -> ActionType:
-    user = await User.get_current(chat_id)
+    user = await Visitor.get_current(chat_id)
     records: list[Record] = await Record.get({"user_email": user.email})
     if not resource.user_email:
         return ActionType.TAKE
@@ -122,7 +122,7 @@ async def get_available_action(resource: Resource, chat_id: int) -> ActionType:
 
 async def format_note(resource: Resource, chat_id: int) -> str:
     command = (await get_available_action(resource, chat_id)).value
-    user = await User.get_current(chat_id)
+    user = await Visitor.get_current(chat_id)
     if user.is_admin:
         return f"{str(resource)}\r\n{command}{resource.id}\r\n{ActionType.EDIT.value}{resource.id}\r\n\r\n"
     else:

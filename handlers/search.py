@@ -3,7 +3,7 @@ from aiogram.filters import Command, CommandObject
 from aiogram.types import Message, CallbackQuery
 
 from helpers import db, tg, chat
-from models import Resource, User
+from models import Resource, Visitor
 
 router = Router()
 
@@ -27,7 +27,7 @@ async def help_handler(message: Message):
 
 
 async def welcome(message: Message):
-    user: User = await User.get_current(message.chat.id)
+    user: Visitor = await Visitor.get_current(message.chat.id)
     if not user.is_admin:
         await message.answer(chat.welcome_msg)
     else:
@@ -68,7 +68,7 @@ async def wishlist_handler(message: Message):
 
 
 async def get_wishlist(message: Message, page: int, call: CallbackQuery | None = None):
-    user = await User.get_current(message.chat.id)
+    user = await Visitor.get_current(message.chat.id)
     resources = await db.get_waited_resources_for_user(user)
     if len(resources) == 0:
         await message.answer(chat.empty_wishlist)
@@ -96,7 +96,7 @@ async def get_mine_resources_handler(message: Message):
 
 
 async def get_mine_resources(message: Message, page: int, call: CallbackQuery | None = None):
-    user = await User.get_current(message.chat.id)
+    user = await Visitor.get_current(message.chat.id)
     resources = await Resource.get_resources_taken_by_user(user)
     if len(resources) == 0:
         await message.answer(chat.user_have_no_device_msg)

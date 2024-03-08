@@ -6,7 +6,7 @@ from aiogram.types import Message, ReplyKeyboardRemove
 
 from filters import not_auth
 from helpers import checker, chat, tg
-from models import User
+from models import Visitor
 
 
 class AuthFSM(StatesGroup):
@@ -49,7 +49,7 @@ async def confirm_login(message: Message, state: FSMContext):
         )
     elif text == "Подтвердить":
         user_email = (await state.get_data())["user_email"]
-        user = await User.auth(user_email, message)
+        user = await Visitor.auth(user_email, message)
         await state.clear()
         await message.answer(
             text=chat.auth_message(user.email, user.is_admin),

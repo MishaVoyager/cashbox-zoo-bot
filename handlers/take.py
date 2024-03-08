@@ -6,7 +6,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, ReplyKeyboardRemove
 
 from helpers import checker, tg, chat
-from models import Resource, User, Record, ActionType
+from models import Resource, Visitor, Record, ActionType
 
 
 class TakeFSM(StatesGroup):
@@ -77,7 +77,7 @@ async def enter_return_date(message: Message, state: FSMContext):
 @router.message(TakeFSM.confirming)
 async def confirm_take(message: Message, state: FSMContext):
     if message.text.lower() == "подтвердить":
-        user = await User.get_current(message.chat.id)
+        user = await Visitor.get_current(message.chat.id)
         data = await state.get_data()
         resource_id = data["resource_id"]
         resource: Resource = await Resource.take(resource_id, user.email, data["address"], data["return_date"])

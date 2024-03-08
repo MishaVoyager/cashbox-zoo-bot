@@ -9,7 +9,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, ReplyKeyboardRemove
 
 from helpers import checker, db, tg, chat
-from models import Resource, User, Category
+from models import Resource, Visitor, Category
 
 CANCEL_BTN = "Галя, отмена"
 SKIP_BTN = "Пропустить"
@@ -39,7 +39,7 @@ router = Router()
 
 @router.message(Command("add"))
 async def add_resource_command(message: Message, state: FSMContext):
-    user = await User.get_current(message.chat.id)
+    user = await Visitor.get_current(message.chat.id)
     if not user.is_admin:
         await message.answer(chat.not_found_msg)
         return

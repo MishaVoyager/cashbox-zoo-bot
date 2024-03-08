@@ -16,6 +16,7 @@ CATEGORIES = ["ККТ", "Весы", "Принтер кухонный", "План
 
 engine = create_async_engine("sqlite+aiosqlite:///db2.db")
 
+
 class Base(AsyncAttrs, DeclarativeBase):
 
     @classmethod
@@ -103,7 +104,7 @@ class Record(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     resource: Mapped[str] = mapped_column(ForeignKey("resource.id"))
-    user_email: Mapped[str] = mapped_column(ForeignKey("user.email"))
+    user_email: Mapped[str] = mapped_column(ForeignKey("visitor.email"))
     action: Mapped[Action] = mapped_column(ForeignKey("action.type"))
     time: Mapped[datetime] = mapped_column(server_default=func.now())
 
@@ -148,8 +149,8 @@ class Record(Base):
                 return record
 
 
-class User(Base):
-    __tablename__ = "user"
+class Visitor(Base):
+    __tablename__ = "visitor"
 
     email: Mapped[str] = mapped_column(primary_key=True)
     chat_id: Mapped[int] = mapped_column()
@@ -160,7 +161,7 @@ class User(Base):
     comment: Mapped[Optional[str]] = mapped_column()
 
     def __repr__(self):
-        return f"User(name={self.email}, " \
+        return f"Visitor(name={self.email}, " \
                f"chat_id={self.chat_id}, " \
                f"is_admin={self.is_admin}, " \
                f"user_id={self.user_id or 'None'}, " \
@@ -174,7 +175,7 @@ class User(Base):
                f"{'c админскими правами' if self.is_admin else 'без админских прав'}"
 
     @classmethod
-    async def auth(cls, email: str, message: Message) -> "User":
+    async def auth(cls, email: str, message: Message) -> "Visitor":
         with open("config.json", "r", encoding="utf-8") as file:
             data = json.loads(file.read())
             is_admin = email in data["admins"]
@@ -190,7 +191,7 @@ class User(Base):
                     logging.info(f"Пользователь изменил chat_id: {repr(users_with_email[0])}")
                     return users_with_email[0]
                 else:
-                    user = User(
+                    user = Visitor(
                         email=email,
                         chat_id=message.chat.id,
                         is_admin=is_admin,
@@ -203,7 +204,7 @@ class User(Base):
                     return user
 
     @classmethod
-    async def get_current(cls, chat_id: int) -> "User | None":
+    async def get_current(cls, chat_id: int) -> "Visitor | None":
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             async with session.begin():
@@ -260,7 +261,7 @@ class Resource(Base):
     reg_date: Mapped[Optional[datetime]] = mapped_column()
     firmware: Mapped[Optional[str]] = mapped_column()
     comment: Mapped[Optional[str]] = mapped_column()
-    user_email: Mapped[Optional[str]] = mapped_column(ForeignKey("user.email"))
+    user_email: Mapped[Optional[str]] = mapped_column(ForeignKey("visitor.email"))
     address: Mapped[Optional[str]] = mapped_column()
     return_date: Mapped[Optional[datetime]] = mapped_column()
 
@@ -427,15 +428,15 @@ class BDInit:
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             async with session.begin():
-                stmt = select(User)
+                stmt = select(Visitor)
                 result = await session.scalars(stmt)
                 users = result.all()
                 if len(users) != 0:
                     return
                 session.add_all(
                     [
-                        User(chat_id=230809906, email="mnoskov@skbkontur.ru", is_admin=True),
-                        User(chat_id=38170680, email="a.karamova@skbkontur.ru"),
+                        Visitor(chat_id=230809906, email="mnoskov@skbkontur.ru", is_admin=True),
+                        Visitor(chat_id=38170680, email="a.karamova@skbkontur.ru"),
                         Record(resource="2", user_email="a.karamova@skbkontur.ru", action=ActionType.QUEUE),
                     ]
                 )
