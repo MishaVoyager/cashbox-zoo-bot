@@ -7,6 +7,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, ReplyKeyboardRemove
+from charset_normalizer import from_bytes
 
 from helpers import checker, db, tg, chat
 from models import Resource, Visitor, Category
@@ -234,9 +235,14 @@ async def check_csv(in_memory_file: BinaryIO) -> tuple[dict[int, list[checker.Re
     errors: dict[int, list[checker.ResourceError]] = {}
     resources = []
     try:
-        wrapper = io.TextIOWrapper(in_memory_file)
-        for index, line in enumerate(wrapper.readlines(), 1):
+        for index, bytes in enumerate(in_memory_file.readlines(), 1):
+            charset = from_bytes(bytes).best().encoding
+            if charset not in ["cp1251", "utf_8"]:
+                charset = "cp1251"
+            line = bytes.decode(encoding=charset)
             line = line.replace("\r\n", "").replace("\n", "")
+            if line.startswith(",,,,,,,,"):
+                continue
             row = [x.strip() for x in line.split(",")]
             if row[0].lower() == "название":
                 continue
