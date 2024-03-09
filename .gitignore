@@ -164,3 +164,4 @@ cython_debug/
 *.idea
 launch.json
 .log*
+/secrets/*

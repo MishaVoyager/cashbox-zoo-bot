@@ -8,13 +8,18 @@ from typing import Optional, Self
 from aiogram.types import Message
 from sqlalchemy import ForeignKey, select, or_
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql import func
 from sqlalchemy.sql.operators import ilike_op
 
-CATEGORIES = ["ККТ", "Весы", "Принтер кухонный", "Планшет", "Терминал", "Эквайринг", "Сканер", "Другое"]
+PG_PASSWORD = open("/run/secrets/pg_pass").readline()
+PG_USER = open("/run/secrets/pg_user").readline()
+PG_DB_NAME = open("/run/secrets/pg_db_name").readline()
+DB_HOST = "postgres"  # При запуске бота напрямую, вне контейнера - указать localhost
 
-engine = create_async_engine("sqlite+aiosqlite:///db2.db")
+engine = create_async_engine(f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{DB_HOST}/{PG_DB_NAME}")
+
+CATEGORIES = ["ККТ", "Весы", "Принтер кухонный", "Планшет", "Терминал", "Эквайринг", "Сканер", "Другое"]
 
 
 class Base(AsyncAttrs, DeclarativeBase):
@@ -159,7 +164,6 @@ class Visitor(Base):
     full_name: Mapped[Optional[str]] = mapped_column()
     username: Mapped[Optional[str]] = mapped_column()
     comment: Mapped[Optional[str]] = mapped_column()
-
 
     def __repr__(self):
         return f"Visitor(name={self.email}, " \
