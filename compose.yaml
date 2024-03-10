@@ -12,12 +12,12 @@ services:
     image: vecheren/cashbox_zoo
     build: .
     ports:
-      - 8000:8000
+      - 8443:8443
     environment:
       ZOO_WEBHOOK_PATH: https://cashbox-zoo-bot.onrender.com/
       USE_POLLING: false
       HOST: 0.0.0.0
-      PORT: 8080
+      PORT: 8443
     secrets:
       - pg_pass
       - pg_user
