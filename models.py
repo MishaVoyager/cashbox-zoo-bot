@@ -18,6 +18,7 @@ PG_DB_NAME = open("/run/secrets/pg_db_name").readline()
 DB_HOST = "postgres"  # При запуске бота напрямую, вне контейнера - указать localhost
 
 engine = create_async_engine(f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{DB_HOST}/{PG_DB_NAME}")
+# engine = create_async_engine("sqlite+aiosqlite:///db2.db")
 
 CATEGORIES = ["ККТ", "Весы", "Принтер кухонный", "Планшет", "Терминал", "Эквайринг", "Сканер", "Другое"]
 
@@ -317,7 +318,7 @@ class Resource(Base):
             if field not in Resource.get_fields_names():
                 logging.error(f"В метод Resource.update некорректно передано поле field: {field}")
                 return None
-        if "user_email" in fields.keys():
+        if "user_email" in fields.keys() and fields["user_email"] is not None:
             await Visitor.add_if_needed(email=fields["user_email"])
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         resources = await Resource.get_by_primary(id)
@@ -340,7 +341,7 @@ class Resource(Base):
             logging.error(f"При добавлении ресурса в метод не переданы name, category_name "
                           f"или vendor_code. Значение fields: {fields}")
             return None
-        if "user_email" in fields.keys():
+        if "user_email" in fields.keys() and fields["user_email"] is not None:
             await Visitor.add_if_needed(email=fields["user_email"])
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
