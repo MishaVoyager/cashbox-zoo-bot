@@ -45,7 +45,8 @@ async def notify_user_about_taking(message: Message, email: str, resource: Resou
                      f"о записи на него устройства {repr(resource)}")
         return None
     if users[0].chat_id is None:
-        logging.info(f"Не уведомили {email} о записи устройства {repr(resource)}: пользователь еще не отправлял сообщений боту")
+        logging.info(
+            f"Не уведомили {email} о записи устройства {repr(resource)}: пользователь еще не отправлял сообщений боту")
         return None
     chat_id = users[0].chat_id
     await message.bot.send_message(chat_id,
