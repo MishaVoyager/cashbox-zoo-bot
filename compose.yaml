@@ -10,7 +10,7 @@
 services:
   server:
     image: vecheren/cashbox_zoo
-    # build: .
+    build: .
     ports:
       - 8000:8000
     environment:
