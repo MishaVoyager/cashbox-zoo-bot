@@ -3,6 +3,7 @@ import json
 import logging
 from datetime import datetime
 from enum import Enum
+from os import getenv
 from typing import Optional, Self
 
 from aiogram.types import Message
@@ -12,13 +13,14 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.sql import func
 from sqlalchemy.sql.operators import ilike_op
 
-PG_PASSWORD = open("/run/secrets/pg_pass").readline()
-PG_USER = open("/run/secrets/pg_user").readline()
-PG_DB_NAME = open("/run/secrets/pg_db_name").readline()
-DB_HOST = "postgres"  # При запуске бота напрямую, вне контейнера - указать localhost
+SECRETS_ADDRESS = getenv("SECRETS_ADDRESS")
+PG_PASSWORD = open(f"{SECRETS_ADDRESS}/pg_pass").readline()
+PG_USER = open(f"{SECRETS_ADDRESS}/pg_user").readline()
+PG_DB_NAME = open(f"{SECRETS_ADDRESS}/pg_db_name").readline()
+DB_HOST = "postgres"  # При запуске бота вне контейнера - указать localhost
 
 engine = create_async_engine(f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{DB_HOST}/{PG_DB_NAME}")
-# engine = create_async_engine("sqlite+aiosqlite:///db2.db")
+# engine = create_async_engine("sqlite+aiosqlite:///db2.db") - для теста можно запустить с SQLITE, без Posgtres
 
 CATEGORIES = ["ККТ", "Весы", "Принтер кухонный", "Планшет", "Терминал", "Эквайринг", "Сканер", "Другое"]
 

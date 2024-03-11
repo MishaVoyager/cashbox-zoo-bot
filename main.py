@@ -11,16 +11,17 @@ from aiohttp import web
 from handlers import backdoor, search, auth, add_resource, take, cancel, edit, actions
 from models import Base, BDInit, engine
 
+SECRETS_ADDRESS = getenv("SECRETS_ADDRESS")
 WEBHOOK_HOST = getenv("ZOO_WEBHOOK_PATH")
 WEBHOOK_ROUTE = "/webhook"
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_ROUTE}"
-WEBHOOK_SECRET = open("/run/secrets/webhook_secret").readline()
+WEBHOOK_SECRET = open(f"{SECRETS_ADDRESS}/webhook_secret").readline()
 USE_POLLING = getenv("USE_POLLING") == "true"
 
-WEBAPP_HOST = getenv("HOST")
-WEBAPP_PORT = int(getenv("PORT"))
+WEBAPP_HOST = getenv("ZOO_HOST")
+WEBAPP_PORT = int(getenv("ZOO_PORT"))
 
-TOKEN = open("/run/secrets/token").readline()
+TOKEN = open(f"{SECRETS_ADDRESS}/token").readline()
 
 COMMANDS = [
     types.BotCommand(command="/all", description="Весь список устройств"),
@@ -54,8 +55,10 @@ async def main(with_test_data: bool = False):
     dp.include_router(search.router)
     await bot.delete_webhook(drop_pending_updates=True)
     if USE_POLLING:
+        logging.info(f"Приложение запустилось в режиме long polling")
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
         return
+    logging.info(f"Телеграму передан адрес вебхука: {WEBHOOK_URL}")
     await bot.set_webhook(WEBHOOK_URL, secret_token=WEBHOOK_SECRET)
     app = web.Application()
     webhook_requests_handler = SimpleRequestHandler(dispatcher=dp, bot=bot, secret_token=WEBHOOK_SECRET)
@@ -70,12 +73,12 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        handlers=[TimedRotatingFileHandler(
-            filename="logs/cashbox_zoo.log",
-            when="midnight",
-            backupCount=30,
-            encoding="utf-8",
-            utc=True
-        )]
+        # handlers=[TimedRotatingFileHandler(
+        #     filename="logs/cashbox_zoo.log",
+        #     when="midnight",
+        #     backupCount=30,
+        #     encoding="utf-8",
+        #     utc=True
+        # )]
     )
     asyncio.run(main(with_test_data=False))
