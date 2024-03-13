@@ -77,7 +77,7 @@ class Base(AsyncAttrs, DeclarativeBase):
         return {field: None for field in cls.get_fields_names()}
 
     @classmethod
-    def _prepare_search_filters(cls, fields: list[str], search_key: str) -> list:
+    def _prepare_filters_for_strings(cls, fields: list[str], search_key: str) -> list:
         search_filter = list()
         for field in fields:
             atr = getattr(cls, field)
@@ -297,8 +297,9 @@ class Resource(Base):
     def __str__(self):
         return ("".join(
             [
-                f"{self.name}, {self.category_name}, {self.id}\r\n",
-                f"Артикул: {self.vendor_code}\r\n",
+                f"{self.id}\r\n",
+                f"{self.name} ({self.category_name.lower()})\r\n",
+                f"Номер (ЗН или СН): {self.vendor_code}\r\n",
                 f"Зарегистрирован {self.reg_date.strftime(r'%d.%m.%Y')}\r\n" if self.reg_date is not None else "",
                 f"Комментарий: {self.comment}\r\n" if self.comment is not None else "",
                 f"Прошивка: {self.firmware}\r\n" if self.firmware is not None else "",
@@ -390,10 +391,13 @@ class Resource(Base):
 
     @classmethod
     async def search(cls, search_key: str, limit=100) -> "list[Resource]":
-        filters = cls._prepare_search_filters(["name", "category_name", "user_email", "vendor_code"], search_key)
-        # Вынести в метод и проверять там, является ли поле интом
-        if search_key.isnumeric():
-            filters.append(Resource.id.in_([int(search_key)]))
+        if search_key.isnumeric() and int(search_key) < 1000000:
+            filters = [Resource.id.in_([int(search_key)])]
+        else:
+            filters = cls._prepare_filters_for_strings(
+                fields=["name", "category_name", "user_email", "vendor_code"],
+                search_key=search_key
+            )
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             async with session.begin():
@@ -472,7 +476,7 @@ class BDInit:
                     ]
                 )
                 await session.commit()
-        await Resource.add(**{"id": 1,"name": "Рыжик", "category_name": "ККТ", "vendor_code": "49494"})
+        await Resource.add(**{"id": 1, "name": "Рыжик", "category_name": "ККТ", "vendor_code": "49494"})
         await Resource.take(1, "a.karamova@skbkontur.ru", "Берлога Пуриков", datetime(2024, 12, 18))
         await Resource.add(**{"id": 2, "name": "Сигма", "category_name": "Сканер", "vendor_code": "222"})
         await Resource.take(2, "mnoskov@skbkontur.ru")
