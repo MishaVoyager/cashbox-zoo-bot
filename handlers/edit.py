@@ -24,6 +24,7 @@ class EditFSM(StatesGroup):
     choose_email = State()
     choose_address = State()
     choose_return_date = State()
+    choose_id = State()
     confirm_take_resource = State()
 
 
@@ -42,7 +43,7 @@ def buttons_for_edit(resource_is_free) -> list[str]:
 
 @router.message(F.text.lower().startswith("завершить"))
 async def stop_editing_handler(message: Message, state: FSMContext):
-    data = (await state.get_data())
+    data = await state.get_data()
     note = ""
     if "resource_id" in data.keys():
         resource_id = data["resource_id"]

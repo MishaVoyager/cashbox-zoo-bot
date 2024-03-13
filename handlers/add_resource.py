@@ -22,6 +22,7 @@ ADD_OR_CANCEL_KEYBOARD = tg.get_reply_keyboard([ADD_BTN, CANCEL_BTN])
 class AddResourceFSM(StatesGroup):
     choosing = State()
     uploading = State()
+    write_id = State()
     write_vendor_code = State()
     write_name = State()
     write_category = State()
@@ -54,14 +55,35 @@ async def add_resource_command(message: Message, state: FSMContext):
 async def add_one_by_one_handler(message: Message, state: FSMContext):
     text = message.text.strip()
     if text == "По одному":
-        await state.set_state(AddResourceFSM.write_vendor_code)
-        await state.set_data(Resource.get_fields_without_id())
-        await message.answer(text=chat.ask_vendor_code_msg, reply_markup=CANCEL_KEYBOARD)
+        await state.set_state(AddResourceFSM.write_id)
+        await state.set_data(Resource.get_fields())
+        await message.answer(text=chat.ask_id, reply_markup=CANCEL_KEYBOARD)
     elif text == "Файлом":
         await state.set_state(AddResourceFSM.uploading)
         await message.answer(text=chat.ask_file_msg, reply_markup=ReplyKeyboardRemove())
     else:
         await message.answer(chat.ask_way_of_adding_msg)
+
+@router.message(AddResourceFSM.write_id)
+async def add_id(message: Message, state: FSMContext):
+    if not message.text.strip().isnumeric():
+        await message.answer(f"{checker.ResourceError.WRONG_ID.value}. Пожалуйста, введите число")
+        return
+    resource_id = int(message.text.strip())
+    existed_resources: list[Resource] = await Resource.get_by_primary(resource_id)
+    if len(existed_resources) >= 1:
+        await state.clear()
+        await message.answer(
+            text=f"Уже есть устройства с таким id. Отредактировать их можно командой "
+                 f"edit\r\n\r\n{await db.format_notes(existed_resources, message.chat.id)}",
+            reply_markup=ReplyKeyboardRemove())
+        return
+    await state.update_data({db.get_field_name(Resource.id): resource_id})
+    await state.set_state(AddResourceFSM.write_vendor_code)
+    await message.answer(
+        text=chat.ask_vendor_code_msg,
+        reply_markup=CANCEL_KEYBOARD
+    )
 
 
 @router.message(AddResourceFSM.write_vendor_code)
@@ -243,7 +265,7 @@ async def check_csv(in_memory_file: BinaryIO) -> tuple[dict[int, list[checker.Re
             if line.startswith(",,,,,,,,"):
                 continue
             row = [x.strip() for x in line.split(",")]
-            if row[0].lower() == "название":
+            if row[0].lower() == "айди":
                 continue
             fields = checker.prepare_fields(row)
             resource, resource_errors = await checker.check_resource(**fields)
@@ -267,16 +289,17 @@ async def paste_from_csv(message: Message, state: FSMContext):
     original_file = await message.bot.get_file(message.document.file_id)
     in_memory_file = await message.bot.download(file=original_file)
     row_errors, resources = await check_csv(in_memory_file)
-
     if not row_errors and not resources:
         await message.answer(chat.adding_file_error_msg)
         return
-    doubles = checker.get_resource_doubles(resources)
-    doubles_text = checker.get_doubles_text(doubles)
-    if row_errors or doubles:
+    vendor_code_doubles = checker.get_vendor_code_doubles(resources)
+    vendor_code_doubles_text = checker.get_doubles_text(vendor_code_doubles, "артикулов")
+    resource_id_doubles = checker.get_resource_id_doubles(resources)
+    resource_id_doubles_text = checker.get_doubles_text(resource_id_doubles, "айди")
+    if row_errors or vendor_code_doubles or resource_id_doubles:
         row_errors_text = checker.format_errors(row_errors)
         error_reply = "Исправьте ошибки и попробуйте снова\r\n\r\n"
-        await message.answer(f"{error_reply}{row_errors_text}{doubles_text}")
+        await message.answer(f"{error_reply}{row_errors_text}{vendor_code_doubles_text}{resource_id_doubles_text}")
         return
     for resource in resources:
         if resource.user_email is not None:

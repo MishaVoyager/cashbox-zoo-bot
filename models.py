@@ -73,8 +73,8 @@ class Base(AsyncAttrs, DeclarativeBase):
         return cls.__table__.columns.keys()
 
     @classmethod
-    def get_fields_without_id(cls) -> dict[str, str | None]:
-        return {field: None for field in cls.get_fields_names() if field != "id"}
+    def get_fields(cls) -> dict[str, str | None]:
+        return {field: None for field in cls.get_fields_names()}
 
     @classmethod
     def _prepare_search_filters(cls, fields: list[str], search_key: str) -> list:
@@ -297,14 +297,15 @@ class Resource(Base):
     def __str__(self):
         return ("".join(
             [
-                f"{self.name}, {self.category_name}, {self.vendor_code}\r\n",
+                f"{self.name}, {self.category_name}, {self.id}\r\n",
+                f"Артикул: {self.vendor_code}\r\n",
                 f"Зарегистрирован {self.reg_date.strftime(r'%d.%m.%Y')}\r\n" if self.reg_date is not None else "",
                 f"Комментарий: {self.comment}\r\n" if self.comment is not None else "",
                 f"Прошивка: {self.firmware}\r\n" if self.firmware is not None else "",
                 f"Сейчас у пользователя: {self.user_email}\r\n" if self.user_email is not None else "",
                 f"Освободится примерно: {self.return_date.strftime(r'%d.%m.%Y')}\r\n" if self.return_date is not None else "",
                 f"Где находится: {self.address}\r\n" if self.address is not None else "",
-            ]))[0:-2]
+            ]))[:-2]
 
     @classmethod
     async def get_single(cls, resource_id) -> "Resource | None":
@@ -315,7 +316,7 @@ class Resource(Base):
         return resources[0]
 
     @classmethod
-    async def update(cls, id: int, **fields) -> "Resource | None":
+    async def update(cls, resource_id: int, **fields) -> "Resource | None":
         for field in fields.keys():
             if field not in Resource.get_fields_names():
                 logging.error(f"В метод Resource.update некорректно передано поле field: {field}")
@@ -323,7 +324,7 @@ class Resource(Base):
         if "user_email" in fields.keys() and fields["user_email"] is not None:
             await Visitor.add_if_needed(email=fields["user_email"])
         async_session = async_sessionmaker(engine, expire_on_commit=False)
-        resources = await Resource.get_by_primary(id)
+        resources = await Resource.get_by_primary(resource_id)
         resource = resources[0]
         async with async_session() as session:
             async with session.begin():
@@ -339,9 +340,9 @@ class Resource(Base):
             if field not in Resource.get_fields_names():
                 logging.error(f"В метод Resource.update некорректно передано поле field: {field}")
                 return None
-        if "name" not in fields.keys() or "category_name" not in fields.keys() or "vendor_code" not in fields.keys():
-            logging.error(f"При добавлении ресурса в метод не переданы name, category_name "
-                          f"или vendor_code. Значение fields: {fields}")
+        if "name" not in fields.keys() or "category_name" not in fields.keys() or "vendor_code" not in fields.keys() or "id" not in fields.keys():
+            logging.error(f"При добавлении ресурса в метод не переданы name, category_name, "
+                          f"vendor_code или id. Значение fields: {fields}")
             return None
         if "user_email" in fields.keys() and fields["user_email"] is not None:
             await Visitor.add_if_needed(email=fields["user_email"])
@@ -389,7 +390,10 @@ class Resource(Base):
 
     @classmethod
     async def search(cls, search_key: str, limit=100) -> "list[Resource]":
-        filters = cls._prepare_search_filters(["name", "category_name", "vendor_code", "user_email"], search_key)
+        filters = cls._prepare_search_filters(["name", "category_name", "user_email", "vendor_code"], search_key)
+        # Вынести в метод и проверять там, является ли поле интом
+        if search_key.isnumeric():
+            filters.append(Resource.id.in_([int(search_key)]))
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             async with session.begin():
@@ -468,11 +472,11 @@ class BDInit:
                     ]
                 )
                 await session.commit()
-        await Resource.add(**{"name": "Рыжик", "category_name": "ККТ", "vendor_code": "49494"})
+        await Resource.add(**{"id": 1,"name": "Рыжик", "category_name": "ККТ", "vendor_code": "49494"})
         await Resource.take(1, "a.karamova@skbkontur.ru", "Берлога Пуриков", datetime(2024, 12, 18))
-        await Resource.add(**{"name": "Сигма", "category_name": "Сканер", "vendor_code": "222"})
+        await Resource.add(**{"id": 2, "name": "Сигма", "category_name": "Сканер", "vendor_code": "222"})
         await Resource.take(2, "mnoskov@skbkontur.ru")
-        await Resource.add(**{"name": "Штрих-Слим", "category_name": "Весы", "vendor_code": "2223"})
+        await Resource.add(**{"id": 3, "name": "Штрих-Слим", "category_name": "Весы", "vendor_code": "2223"})
         # for i in range(20):
         #     await Resource.add(**{"name": f"Вертолет{i}",
         #                           "category_name": "ККТ",

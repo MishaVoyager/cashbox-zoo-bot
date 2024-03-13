@@ -1,3 +1,4 @@
+import logging
 import re
 from collections import Counter
 from datetime import datetime
@@ -8,6 +9,9 @@ import models
 
 
 class ResourceError(str, Enum):
+    WRONG_ID = "Айди ресурса не является числом"
+    EXISTED_ID = "Уже есть устройства с таким айди"
+    NO_ID = "Не указан id ресурса"
     NO_NAME = "Не указано название ресурса"
     NO_CATEGORY = "Не указана категория ресурса"
     NO_VENDOR_CODE = "Не указан артикул"
@@ -24,14 +28,18 @@ async def is_admin(chat_id) -> bool:
     return user.is_admin
 
 
-async def is_existed_resource(vendor_code: str) -> bool:
+async def is_existed_vendor_code(vendor_code: str) -> bool:
     existed_resources: list[models.Resource] = await models.Resource.get_by_vendor_code(vendor_code)
+    return len(existed_resources) >= 1
+
+async def is_existed_id(resource_id: int) -> bool:
+    existed_resources: list[models.Resource] = await models.Resource.get_by_primary(resource_id)
     return len(existed_resources) >= 1
 
 
 def prepare_fields(row: list[str]) -> dict[str, str | None]:
     row_with_none = [x.strip() if x.strip() != "" else None for x in row]
-    fields = models.Resource.get_fields_without_id()
+    fields = models.Resource.get_fields()
     for index, key_value in enumerate(fields.items()):
         if index >= len(row_with_none):
             break
@@ -40,6 +48,7 @@ def prepare_fields(row: list[str]) -> dict[str, str | None]:
 
 
 async def check_resource(
+        id: str,
         name: str,
         category_name: str,
         vendor_code: str,
@@ -48,12 +57,21 @@ async def check_resource(
         comment: str,
         user_email: str,
         address: str,
-        return_date: str) -> tuple[models.Resource, list[ResourceError]]:
+        return_date: str) -> tuple[models.Resource | None, list[ResourceError]]:
     errors = []
+    if not id:
+        errors.append(ResourceError.NO_ID)
+    else:
+        if not id.isnumeric():
+            errors.append(ResourceError.WRONG_ID)
+        else:
+            id = int(id)
+            if await is_existed_id(id):
+                errors.append(ResourceError.EXISTED_ID)
     if not vendor_code:
         errors.append(ResourceError.NO_VENDOR_CODE)
     else:
-        if await is_existed_resource(vendor_code):
+        if await is_existed_vendor_code(vendor_code):
             errors.append(ResourceError.EXISTED_VENDOR_CODE)
     if not name:
         errors.append(ResourceError.NO_NAME)
@@ -74,31 +92,41 @@ async def check_resource(
             errors.append(ResourceError.WRONG_DATE)
         elif is_paste_date(return_date):
             errors.append(ResourceError.PASSED_DATE)
-    resource = models.Resource(
-        name=name,
-        category_name=category_name,
-        vendor_code=vendor_code,
-        reg_date=reg_date,
-        firmware=firmware,
-        comment=comment,
-        user_email=user_email,
-        address=address,
-        return_date=return_date
-    )
+    if len(errors) == 0:
+        resource = models.Resource(
+            id = id,
+            name=name,
+            category_name=category_name,
+            vendor_code=vendor_code,
+            reg_date=reg_date,
+            firmware=firmware,
+            comment=comment,
+            user_email=user_email,
+            address=address,
+            return_date=return_date
+        )
+        logging.info(f"Обработали ресурс: {repr(resource)}")
+    else:
+        resource = None
     return resource, errors
 
 
-def get_resource_doubles(resources: list) -> list:
+def get_vendor_code_doubles(resources: list) -> list:
     if len(resources) == 0:
         return []
     vendor_codes = [i.vendor_code for i in resources]
     return [k for k, v in Counter(vendor_codes).items() if v > 1]
 
 
-def get_doubles_text(doubles: list) -> str:
-    if len(doubles) == 0:
-        return ""
-    return f"В файле есть дубли артикулов {', '.join(doubles)}"
+def get_resource_id_doubles(resources: list) -> list:
+    if len(resources) == 0:
+        return []
+    resource_ids = [i.id for i in resources]
+    return [k for k, v in Counter(resource_ids).items() if v > 1]
+
+
+def get_doubles_text(doubles: list, field_name: str) -> str:
+    return f"В файле есть дубли {field_name} {', '.join(doubles)}" if len(doubles) != 0 else ""
 
 
 def format_errors(indexes_with_errors: dict[int, list[ResourceError]]) -> str:
