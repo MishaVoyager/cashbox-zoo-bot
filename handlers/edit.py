@@ -41,8 +41,7 @@ def buttons_for_edit(resource_is_free) -> list[str]:
     return buttons
 
 
-@router.message(F.text.lower().startswith("завершить"))
-async def stop_editing_handler(message: Message, state: FSMContext):
+async def escape_editing(message: Message, state: FSMContext):
     data = await state.get_data()
     note = ""
     if "resource_id" in data.keys():
@@ -54,6 +53,10 @@ async def stop_editing_handler(message: Message, state: FSMContext):
         text=f"Вы завершили редактирование\r\n\r\n{note}",
         reply_markup=ReplyKeyboardRemove()
     )
+
+@router.message(F.text.lower().startswith("завершить"))
+async def stop_editing_handler(message: Message, state: FSMContext):
+    await escape_editing(message, state)
 
 
 @router.message(F.text.lower().startswith("вернуться"))
@@ -114,6 +117,9 @@ async def choosing_handler(message: Message, state: FSMContext):
                 text=chat.ask_email_msg,
                 reply_markup=ReplyKeyboardRemove()
             )
+            return
+        case _:
+            await escape_editing(message, state)
             return
     await state.update_data(field_name=field_name)
     await state.set_state(EditFSM.editing)
