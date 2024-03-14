@@ -19,8 +19,9 @@ PG_USER = open(f"{SECRETS_ADDRESS}/pg_user").readline()
 PG_DB_NAME = open(f"{SECRETS_ADDRESS}/pg_db_name").readline()
 DB_HOST = "postgres"  # При запуске бота вне контейнера - указать localhost
 
+
 engine = create_async_engine(f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{DB_HOST}/{PG_DB_NAME}")
-# engine = create_async_engine("sqlite+aiosqlite:///db2.db") - для теста можно запустить с SQLITE, без Posgtres
+
 
 CATEGORIES = ["ККТ", "Весы", "Принтер кухонный", "Планшет", "Терминал", "Эквайринг", "Сканер", "Другое"]
 
@@ -299,7 +300,7 @@ class Resource(Base):
             [
                 f"{self.id}\r\n",
                 f"{self.name} ({self.category_name.lower()})\r\n",
-                f"Номер (ЗН или СН): {self.vendor_code}\r\n",
+                f"Артикул (ЗН или СН): {self.vendor_code}\r\n",
                 f"Зарегистрирован {self.reg_date.strftime(r'%d.%m.%Y')}\r\n" if self.reg_date is not None else "",
                 f"Комментарий: {self.comment}\r\n" if self.comment is not None else "",
                 f"Прошивка: {self.firmware}\r\n" if self.firmware is not None else "",
@@ -438,6 +439,20 @@ class Resource(Base):
                 result = await session.scalars(stmt)
                 resources = result.all()
                 return list(resources)
+
+    async def get_csv_value(self) -> list[str]:
+        return [
+            str(self.id),
+            self.name,
+            self.category_name,
+            self.vendor_code,
+            self.reg_date.strftime(r'%d.%m.%Y') if self.reg_date is not None else " ",
+            self.firmware if self.firmware is not None else " ",
+            self.comment if self.comment is not None else " ",
+            self.user_email if self.user_email is not None else " ",
+            self.address if self.address is not None else " ",
+            self.return_date.strftime(r'%d.%m.%Y') if self.return_date is not None else " "
+        ]
 
 
 class BDInit:

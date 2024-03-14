@@ -1,12 +1,16 @@
+from io import StringIO, BytesIO
 import logging
 import os
+import csv
 
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.types import Message, FSInputFile, ReplyKeyboardRemove
+from aiogram.types import BufferedInputFile
 
+import models
 from helpers import chat, tg
 from models import Visitor
 
@@ -45,8 +49,31 @@ async def info_handler(message: Message, state: FSMContext) -> None:
     await state.set_state(BackdoorFSM.choosing)
     await message.answer(
         text="Что хотите?",
-        reply_markup=tg.get_reply_keyboard(["Последний лог", "Все логи", "Бэкап базы", "Выйти"])
+        reply_markup=tg.get_reply_keyboard(["Последний лог", "Все логи", "Бэкап базы", "Устройства в csv", "Выйти"])
     )
+
+
+async def get_devices_csv() -> StringIO:
+    resources = await models.Resource.get_all(1000)
+    first_row = [
+        "Айди",
+        "Название",
+        "Категория",
+        "Артикул",
+        "Дата регистрации",
+        "Прошивка",
+        "Комментарий",
+        "Электронная почта",
+        "Место устройства",
+        "Дата возврата"
+    ]
+    text = StringIO()
+    csv.writer(text).writerow(first_row)
+    for resource in resources:
+        resource_scv = await resource.get_csv_value()
+        csv.writer(text).writerow(resource_scv)
+    text.seek(0)
+    return text
 
 
 @router.message(BackdoorFSM.choosing)
@@ -75,5 +102,12 @@ async def choosing_handler(message: Message, state: FSMContext) -> None:
     elif text == "Выйти":
         await state.clear()
         await message.answer("Вы вышли из режима info", reply_markup=ReplyKeyboardRemove())
+    elif text == "Устройства в csv":
+        text = await get_devices_csv()
+        file = text.read().encode(encoding="cp1251")
+        input_file = BufferedInputFile(file, "devices.csv")
+        await message.reply_document(input_file)
     else:
         await message.answer("Выберите из списка вариантов")
+
+
