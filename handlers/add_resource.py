@@ -1,7 +1,7 @@
 import csv
 import logging
-from typing import BinaryIO
 from io import StringIO
+from typing import BinaryIO
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -65,6 +65,7 @@ async def add_one_by_one_handler(message: Message, state: FSMContext):
         await message.answer(text=chat.ask_file_msg, reply_markup=ReplyKeyboardRemove())
     else:
         await message.answer(chat.ask_way_of_adding_msg)
+
 
 @router.message(AddResourceFSM.write_id)
 async def add_id(message: Message, state: FSMContext):

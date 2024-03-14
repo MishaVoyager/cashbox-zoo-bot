@@ -55,7 +55,7 @@ async def main(with_test_data: bool = False):
     dp.include_router(search.router)
     await bot.delete_webhook(drop_pending_updates=True)
     if USE_POLLING:
-        logging.info(f"Приложение запустилось в режиме long polling")
+        logging.info("Приложение запустилось в режиме polling")
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
         return
     logging.info(f"Телеграму передан адрес вебхука: {WEBHOOK_URL}")
@@ -73,12 +73,12 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        # handlers=[TimedRotatingFileHandler(
-        #     filename="logs/cashbox_zoo.log",
-        #     when="midnight",
-        #     backupCount=30,
-        #     encoding="utf-8",
-        #     utc=True
-        # )]
+        handlers=[TimedRotatingFileHandler(
+            filename="logs/cashbox_zoo.log",
+            when="midnight",
+            backupCount=30,
+            encoding="utf-8",
+            utc=True
+        )]
     )
     asyncio.run(main(with_test_data=False))

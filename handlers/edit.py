@@ -54,6 +54,7 @@ async def escape_editing(message: Message, state: FSMContext):
         reply_markup=ReplyKeyboardRemove()
     )
 
+
 @router.message(F.text.lower().startswith("завершить"))
 async def stop_editing_handler(message: Message, state: FSMContext):
     await escape_editing(message, state)

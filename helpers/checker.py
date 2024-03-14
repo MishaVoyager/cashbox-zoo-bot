@@ -32,6 +32,7 @@ async def is_existed_vendor_code(vendor_code: str) -> bool:
     existed_resources: list[models.Resource] = await models.Resource.get_by_vendor_code(vendor_code)
     return len(existed_resources) >= 1
 
+
 async def is_existed_id(resource_id: int) -> bool:
     existed_resources: list[models.Resource] = await models.Resource.get_by_primary(resource_id)
     return len(existed_resources) >= 1
@@ -94,7 +95,7 @@ async def check_resource(
             errors.append(ResourceError.PASSED_DATE)
     if len(errors) == 0:
         resource = models.Resource(
-            id = id,
+            id=id,
             name=name,
             category_name=category_name,
             vendor_code=vendor_code,

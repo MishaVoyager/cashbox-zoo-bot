@@ -6,4 +6,3 @@ pytest>=7.4
 aiohttp~=3.9.3
 asyncpg>=0.29.0
 charset_normalizer>=3.3.2
-aiosqlite>=0.19

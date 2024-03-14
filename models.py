@@ -19,9 +19,7 @@ PG_USER = open(f"{SECRETS_ADDRESS}/pg_user").readline()
 PG_DB_NAME = open(f"{SECRETS_ADDRESS}/pg_db_name").readline()
 DB_HOST = "postgres"  # При запуске бота вне контейнера - указать localhost
 
-
 engine = create_async_engine(f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{DB_HOST}/{PG_DB_NAME}")
-
 
 CATEGORIES = ["ККТ", "Весы", "Принтер кухонный", "Планшет", "Терминал", "Эквайринг", "Сканер", "Другое"]
 

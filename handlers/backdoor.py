@@ -1,14 +1,14 @@
-from io import StringIO, BytesIO
+import csv
 import logging
 import os
-import csv
+from io import StringIO
 
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import Message, FSInputFile, ReplyKeyboardRemove
 from aiogram.types import BufferedInputFile
+from aiogram.types import Message, FSInputFile, ReplyKeyboardRemove
 
 import models
 from helpers import chat, tg
@@ -109,5 +109,3 @@ async def choosing_handler(message: Message, state: FSMContext) -> None:
         await message.reply_document(input_file)
     else:
         await message.answer("Выберите из списка вариантов")
-
-
