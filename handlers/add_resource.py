@@ -1,5 +1,7 @@
+import csv
 import logging
 from typing import BinaryIO
+from io import StringIO
 
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -252,20 +254,24 @@ async def finish_adding_resource(message: Message, state: FSMContext):
     )
 
 
+def get_charset(file: BinaryIO):
+    charset = from_bytes(file.read()).best().encoding
+    logging.info(f"Charset normalizer определил кодировку как: {charset}")
+    if charset not in ["cp1251", "utf_8"]:
+        charset = "cp1251"
+    logging.info(f"Для декодирования выбрана кодировка: {charset}")
+    file.seek(0)
+    return charset
+
+
 async def check_csv(in_memory_file: BinaryIO) -> tuple[dict[int, list[checker.ResourceError]], list] | None:
     errors: dict[int, list[checker.ResourceError]] = {}
     resources = []
+    charset = get_charset(in_memory_file)
+    s = StringIO(in_memory_file.read().decode(encoding=charset))
     try:
-        for index, bytes in enumerate(in_memory_file.readlines(), 1):
-            charset = from_bytes(bytes).best().encoding
-            if charset not in ["cp1251", "utf_8"]:
-                charset = "cp1251"
-            line = bytes.decode(encoding=charset)
-            line = line.replace("\r\n", "").replace("\n", "")
-            if line.startswith(",,,,,,,,"):
-                continue
-            row = [x.strip() for x in line.split(",")]
-            if row[0].lower() == "айди":
+        for index, row in enumerate(csv.reader(s), 1):
+            if row == [] or row[0].lower() == "айди":
                 continue
             fields = checker.prepare_fields(row)
             resource, resource_errors = await checker.check_resource(**fields)
@@ -273,11 +279,9 @@ async def check_csv(in_memory_file: BinaryIO) -> tuple[dict[int, list[checker.Re
                 errors.update({index: resource_errors})
             elif resource:
                 resources.append(resource)
+        return errors, resources
     except Exception:
         logging.error("При парсинге файла произошла неожиданная ошибка", exc_info=True)
-        return
-    finally:
-        return errors, resources
 
 
 @router.message(AddResourceFSM.uploading, F.document)
