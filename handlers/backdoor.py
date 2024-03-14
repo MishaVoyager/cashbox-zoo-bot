@@ -49,7 +49,7 @@ async def info_handler(message: Message, state: FSMContext) -> None:
     await state.set_state(BackdoorFSM.choosing)
     await message.answer(
         text="Что хотите?",
-        reply_markup=tg.get_reply_keyboard(["Последний лог", "Все логи", "Бэкап базы", "Устройства в csv", "Выйти"])
+        reply_markup=tg.get_reply_keyboard(["Последний лог", "Все логи", "Устройства в csv", "Выйти"])
     )
 
 
@@ -87,25 +87,13 @@ async def choosing_handler(message: Message, state: FSMContext) -> None:
             logging.error("В папке не найдены логи!")
         for file_name in file_names:
             await message.reply_document(FSInputFile(file_name))
-    elif text == "Бэкап базы":
-        db_files = get_db_files()
-        if len(db_files) == 0:
-            record = "Файл базы данных не найден"
-            logging.error(record)
-            await message.answer(record)
-            return
-        elif len(db_files) > 1:
-            record = "Файлов базы данных больше одного"
-            logging.error(record + ''.join(db_files))
-            await message.answer(record)
-        await message.reply_document(FSInputFile(db_files[0]))
-    elif text == "Выйти":
-        await state.clear()
-        await message.answer("Вы вышли из режима info", reply_markup=ReplyKeyboardRemove())
     elif text == "Устройства в csv":
         text = await get_devices_csv()
         file = text.read().encode(encoding="cp1251")
         input_file = BufferedInputFile(file, "devices.csv")
         await message.reply_document(input_file)
+    elif text == "Выйти":
+        await state.clear()
+        await message.answer("Вы вышли из режима info", reply_markup=ReplyKeyboardRemove())
     else:
         await message.answer("Выберите из списка вариантов")
