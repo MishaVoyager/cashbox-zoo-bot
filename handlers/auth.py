@@ -26,7 +26,7 @@ async def auth(message: Message, state: FSMContext):
 
 @router.message(AuthFSM.entering_email)
 async def login(message: Message, state: FSMContext):
-    user_email = message.text.strip()
+    user_email = message.text.strip().lower()
     if not checker.is_kontur_email(user_email):
         await message.answer(text=f"{checker.ResourceError.WRONG_EMAIL.value}\r\n{chat.wrong_email_msg}")
         return
