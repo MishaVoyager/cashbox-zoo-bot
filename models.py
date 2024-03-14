@@ -9,7 +9,7 @@ from typing import Optional, Self
 from aiogram.types import Message
 from sqlalchemy import ForeignKey, select, or_
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.sql.operators import ilike_op
 
@@ -110,9 +110,9 @@ class Record(Base):
     __tablename__ = "record"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    resource: Mapped[str] = mapped_column(ForeignKey("resource.id"))
-    user_email: Mapped[str] = mapped_column(ForeignKey("visitor.email"))
-    action: Mapped[Action] = mapped_column(ForeignKey("action.type"))
+    resource: Mapped[str] = mapped_column(ForeignKey("resource.id", onupdate="cascade", ondelete="cascade"))
+    user_email: Mapped[str] = mapped_column(ForeignKey("visitor.email", onupdate="cascade", ondelete="cascade"))
+    action: Mapped[Action] = mapped_column(ForeignKey("action.type", onupdate="cascade", ondelete="cascade"))
     time: Mapped[datetime] = mapped_column(server_default=func.now())
 
     def __repr__(self):
@@ -166,6 +166,8 @@ class Visitor(Base):
     full_name: Mapped[Optional[str]] = mapped_column()
     username: Mapped[Optional[str]] = mapped_column()
     comment: Mapped[Optional[str]] = mapped_column()
+    resources = relationship("Resource")
+    records = relationship("Record")
 
     def __repr__(self):
         return f"Visitor(name={self.email}, " \
@@ -209,6 +211,20 @@ class Visitor(Base):
                     await session.commit()
                     logging.info(f"Пользователь авторизовался: {repr(user)}")
                     return user
+
+    @classmethod
+    async def update_email(cls, current_email, new_email):
+        visitors = await cls.get_by_primary(current_email)
+        if len(visitors) == 0:
+            return None
+        visitor = visitors[0]
+        async_session = async_sessionmaker(engine, expire_on_commit=False)
+        async with async_session() as session:
+            async with session.begin():
+                visitor = await session.merge(visitor)
+                visitor.email = new_email
+                await session.commit()
+        return True
 
     @classmethod
     async def get_current(cls, chat_id: int) -> "Visitor | None":
@@ -282,7 +298,8 @@ class Resource(Base):
     reg_date: Mapped[Optional[datetime]] = mapped_column()
     firmware: Mapped[Optional[str]] = mapped_column()
     comment: Mapped[Optional[str]] = mapped_column()
-    user_email: Mapped[Optional[str]] = mapped_column(ForeignKey("visitor.email"))
+    user_email: Mapped[Optional[str]] = mapped_column(
+        ForeignKey("visitor.email", onupdate="cascade", ondelete="cascade"))
     address: Mapped[Optional[str]] = mapped_column()
     return_date: Mapped[Optional[datetime]] = mapped_column()
 
@@ -485,7 +502,6 @@ class BDInit:
                     [
                         Visitor(chat_id=230809906, email="mnoskov@skbkontur.ru", is_admin=True),
                         Visitor(chat_id=38170680, email="a.karamova@skbkontur.ru"),
-                        Record(resource="2", user_email="a.karamova@skbkontur.ru", action=ActionType.QUEUE),
                     ]
                 )
                 await session.commit()
@@ -494,6 +510,8 @@ class BDInit:
         await Resource.add(**{"id": 2, "name": "Сигма", "category_name": "Сканер", "vendor_code": "222"})
         await Resource.take(2, "mnoskov@skbkontur.ru")
         await Resource.add(**{"id": 3, "name": "Штрих-Слим", "category_name": "Весы", "vendor_code": "2223"})
+        await Record.add(2, "a.karamova@skbkontur.ru", ActionType.QUEUE)
+
         # for i in range(20):
         #     await Resource.add(**{"name": f"Вертолет{i}",
         #                           "category_name": "ККТ",
