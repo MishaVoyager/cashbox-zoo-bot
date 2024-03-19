@@ -19,6 +19,7 @@ services:
       ZOO_HOST: 0.0.0.0
       ZOO_PORT: 8080
       SECRETS_ADDRESS: /run/secrets
+      SECRETS_IN_FILE: true
     secrets:
       - pg_pass
       - pg_user

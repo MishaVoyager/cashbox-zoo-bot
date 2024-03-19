@@ -13,10 +13,17 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.sql.operators import ilike_op
 
-SECRETS_ADDRESS = getenv("SECRETS_ADDRESS")
-PG_PASSWORD = open(f"{SECRETS_ADDRESS}/pg_pass").readline()
-PG_USER = open(f"{SECRETS_ADDRESS}/pg_user").readline()
-PG_DB_NAME = open(f"{SECRETS_ADDRESS}/pg_db_name").readline()
+SECRETS_IN_FILE = getenv("SECRETS_IN_FILE")
+if SECRETS_IN_FILE:
+    SECRETS_ADDRESS = getenv("SECRETS_ADDRESS")
+    PG_DB_NAME = open(f"{SECRETS_ADDRESS}/pg_db_name").readline()
+    PG_USER = open(f"{SECRETS_ADDRESS}/pg_user").readline()
+    PG_PASSWORD = open(f"{SECRETS_ADDRESS}/pg_pass").readline()
+else:
+    PG_DB_NAME = getenv("PG_DB_NAME")
+    PG_USER = getenv("PG_USER")
+    PG_PASSWORD = getenv("PG_PASSWORD")
+
 DB_HOST = "postgres"  # При запуске бота вне контейнера - указать localhost
 
 engine = create_async_engine(f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{DB_HOST}/{PG_DB_NAME}")

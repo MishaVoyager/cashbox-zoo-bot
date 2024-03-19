@@ -11,17 +11,26 @@ from aiohttp import web
 from handlers import backdoor, search, auth, add_resource, take, cancel, edit, actions
 from models import Base, BDInit, engine
 
-SECRETS_ADDRESS = getenv("SECRETS_ADDRESS")
+
+SECRETS_IN_FILE = getenv("SECRETS_IN_FILE")
+if SECRETS_IN_FILE:
+    SECRETS_ADDRESS = getenv("SECRETS_ADDRESS")
+    WEBHOOK_SECRET = open(f"{SECRETS_ADDRESS}/webhook_secret").readline()
+    TOKEN = open(f"{SECRETS_ADDRESS}/token").readline()
+else:
+    WEBHOOK_SECRET = getenv("WEBHOOK_SECRET")
+    TOKEN = getenv("TOKEN")
+
 WEBHOOK_HOST = getenv("ZOO_WEBHOOK_PATH")
 WEBHOOK_ROUTE = "/webhook"
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_ROUTE}"
-WEBHOOK_SECRET = open(f"{SECRETS_ADDRESS}/webhook_secret").readline()
+
 USE_POLLING = getenv("USE_POLLING") == "true"
 
 WEBAPP_HOST = getenv("ZOO_HOST")
 WEBAPP_PORT = int(getenv("ZOO_PORT"))
 
-TOKEN = open(f"{SECRETS_ADDRESS}/token").readline()
+
 
 COMMANDS = [
     types.BotCommand(command="/all", description="Весь список устройств"),
