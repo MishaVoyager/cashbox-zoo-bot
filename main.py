@@ -11,7 +11,6 @@ from aiohttp import web
 from handlers import backdoor, search, auth, add_resource, take, cancel, edit, actions
 from models import Base, BDInit, engine
 
-
 SECRETS_IN_FILE = getenv("SECRETS_IN_FILE")
 if SECRETS_IN_FILE == "true":
     SECRETS_ADDRESS = getenv("SECRETS_ADDRESS")
@@ -29,8 +28,6 @@ USE_POLLING = getenv("USE_POLLING") == "true"
 
 WEBAPP_HOST = getenv("ZOO_HOST")
 WEBAPP_PORT = int(getenv("ZOO_PORT"))
-
-
 
 COMMANDS = [
     types.BotCommand(command="/all", description="Весь список устройств"),
