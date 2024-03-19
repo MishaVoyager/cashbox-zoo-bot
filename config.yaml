@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: postgres-config
+  name: config
 data:
   USE_POLLING: "true"
   SECRETS_IN_FILE: "false"

@@ -1,21 +1,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webapp-deployment
+  name: cashbox-zoo-deployment
   labels:
-    app: webapp
+    app: cashbox-zoo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: webapp
+      app: cashbox-zoo
   template:
     metadata:
       labels:
-        app: webapp
+        app: cashbox-zoo
     spec:
       containers:
-      - name: webapp
+      - name: cashbox-zoo
         image: vecheren/cashbox_zoo
         ports:
         - containerPort: 8080
@@ -23,67 +23,67 @@ spec:
         - name: PG_DB_NAME
           valueFrom: 
             secretKeyRef:
-              name: postgres-secret
+              name: secret
               key: pg_db_name
         - name: PG_USER
           valueFrom: 
             secretKeyRef:
-              name: postgres-secret
+              name: secret
               key: pg_user
         - name: PG_PASSWORD
           valueFrom: 
             secretKeyRef:
-              name: postgres-secret
+              name: secret
               key: pg_pass
         - name: TOKEN
           valueFrom: 
             secretKeyRef:
-              name: postgres-secret
+              name: secret
               key: token
         - name: WEBHOOK_SECRET
           valueFrom: 
             secretKeyRef:
-              name: postgres-secret
+              name: secret
               key: webhook_secret
         - name: USE_POLLING
           valueFrom:
             configMapKeyRef:
-              name: postgres-config
+              name: config
               key: USE_POLLING
         - name: SECRETS_IN_FILE
           valueFrom:
             configMapKeyRef:
-              name: postgres-config
+              name: config
               key: SECRETS_IN_FILE
         - name: ZOO_WEBHOOK_PATH
           valueFrom:
             configMapKeyRef:
-              name: postgres-config
+              name: config
               key: ZOO_WEBHOOK_PATH
         - name: ZOO_HOST
           valueFrom:
             configMapKeyRef:
-              name: postgres-config
+              name: config
               key: ZOO_HOST
         - name: ZOO_PORT
           valueFrom:
             configMapKeyRef:
-              name: postgres-config
+              name: config
               key: ZOO_PORT
         - name: POSTGRES_URL
           valueFrom:
             configMapKeyRef:
-              name: postgres-config
+              name: config
               key: POSTGRES_URL
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: webapp-service
+  name: cashbox-zoo-service
 spec:
   type: NodePort
   selector:
-    app: webapp
+    app: cashbox-zoo
   ports:
     - protocol: TCP
       port: 8080
