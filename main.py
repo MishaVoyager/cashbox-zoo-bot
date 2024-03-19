@@ -13,7 +13,7 @@ from models import Base, BDInit, engine
 
 
 SECRETS_IN_FILE = getenv("SECRETS_IN_FILE")
-if SECRETS_IN_FILE:
+if SECRETS_IN_FILE == "true":
     SECRETS_ADDRESS = getenv("SECRETS_ADDRESS")
     WEBHOOK_SECRET = open(f"{SECRETS_ADDRESS}/webhook_secret").readline()
     TOKEN = open(f"{SECRETS_ADDRESS}/token").readline()

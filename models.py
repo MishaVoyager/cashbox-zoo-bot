@@ -14,7 +14,7 @@ from sqlalchemy.sql import func
 from sqlalchemy.sql.operators import ilike_op
 
 SECRETS_IN_FILE = getenv("SECRETS_IN_FILE")
-if SECRETS_IN_FILE:
+if SECRETS_IN_FILE == "true":
     SECRETS_ADDRESS = getenv("SECRETS_ADDRESS")
     PG_DB_NAME = open(f"{SECRETS_ADDRESS}/pg_db_name").readline()
     PG_USER = open(f"{SECRETS_ADDRESS}/pg_user").readline()
@@ -24,7 +24,7 @@ else:
     PG_USER = getenv("PG_USER")
     PG_PASSWORD = getenv("PG_PASSWORD")
 
-DB_HOST = "postgres"  # При запуске бота вне контейнера - указать localhost
+DB_HOST = getenv("POSTGRES_URL")
 
 engine = create_async_engine(f"postgresql+asyncpg://{PG_USER}:{PG_PASSWORD}@{DB_HOST}/{PG_DB_NAME}")
 
